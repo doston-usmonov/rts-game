@@ -1,0 +1,34 @@
+{
+    "m_GameObject": {
+        "m_Component": [
+            {
+                "component": {
+                    "m_ParticleSystem": {
+                        "lengthInSec": 5,
+                        "simulationSpeed": 0.5,
+                        "stopAction": 0,
+                        "looping": true,
+                        "prewarm": false,
+                        "playOnAwake": true,
+                        "useUnscaledTime": false,
+                        "emitterVelocityMode": 0,
+                        "maxNumParticles": 500,
+                        "startDelay": {
+                            "scalar": 0
+                        },
+                        "loop": true,
+                        "flipRotation": 0,
+                        "gravityModifier": {
+                            "scalar": 0.2
+                        },
+                        "simulationSpace": 0,
+                        "scalingMode": 1,
+                        "playbackSpeed": {
+                            "scalar": 1
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameObject xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="BunkerMapIndicator">
+  <Components>
+    <Component type="UnityEngine.RectTransform">
+      <Properties>
+        <Property name="anchorMin" type="UnityEngine.Vector2">
+          <x>0.5</x>
+          <y>0.5</y>
+        </Property>
+        <Property name="anchorMax" type="UnityEngine.Vector2">
+          <x>0.5</x>
+          <y>0.5</y>
+        </Property>
+        <Property name="sizeDelta" type="UnityEngine.Vector2">
+          <x>24</x>
+          <y>24</y>
+        </Property>
+      </Properties>
+    </Component>
+    <Component type="UnityEngine.UI.Image">
+      <Properties>
+        <Property name="color" type="UnityEngine.Color">
+          <r>0.4</r>
+          <g>0.6</g>
+          <b>1.0</b>
+          <a>1.0</a>
+        </Property>
+        <Property name="sprite" type="UnityEngine.Sprite">
+          <Name>BunkerIcon</Name>
+        </Property>
+      </Properties>
+    </Component>
+  </Components>
+  <Children>
+    <GameObject name="RangeIndicator">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>0.5</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>0.5</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>100</x>
+              <y>100</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>0.4</r>
+              <g>0.6</g>
+              <b>1.0</b>
+              <a>0.3</a>
+            </Property>
+            <Property name="sprite" type="UnityEngine.Sprite">
+              <Name>CircleRange</Name>
+            </Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+  </Children>
+</GameObject>

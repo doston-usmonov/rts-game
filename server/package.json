@@ -1,0 +1,22 @@
+{
+  "name": "rts-game-server",
+  "version": "1.0.0",
+  "description": "Backend server for RTS game",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "socket.io": "^4.7.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "jest": "^29.6.4",
+    "nodemon": "^3.0.1"
+  }
+}

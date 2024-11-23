@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameObject xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="TacticalMapFilter">
+  <Components>
+    <Component type="UnityEngine.RectTransform">
+      <Properties>
+        <Property name="anchorMin" type="UnityEngine.Vector2">
+          <x>0</x>
+          <y>1</y>
+        </Property>
+        <Property name="anchorMax" type="UnityEngine.Vector2">
+          <x>0</x>
+          <y>1</y>
+        </Property>
+        <Property name="sizeDelta" type="UnityEngine.Vector2">
+          <x>160</x>
+          <y>30</y>
+        </Property>
+        <Property name="pivot" type="UnityEngine.Vector2">
+          <x>0</x>
+          <y>1</y>
+        </Property>
+      </Properties>
+    </Component>
+    <Component type="UnityEngine.UI.Toggle">
+      <Properties>
+        <Property name="isOn" type="bool">false</Property>
+        <Property name="transition" type="UnityEngine.UI.Selectable+Transition">ColorTint</Property>
+        <Property name="colors" type="UnityEngine.UI.ColorBlock">
+          <normalColor>
+            <r>1</r>
+            <g>1</g>
+            <b>1</b>
+            <a>1</a>
+          </normalColor>
+          <highlightedColor>
+            <r>0.9</r>
+            <g>0.9</g>
+            <b>0.9</b>
+            <a>1</a>
+          </highlightedColor>
+          <pressedColor>
+            <r>0.7</r>
+            <g>0.7</g>
+            <b>0.7</b>
+            <a>1</a>
+          </pressedColor>
+          <selectedColor>
+            <r>1</r>
+            <g>1</g>
+            <b>1</b>
+            <a>1</a>
+          </selectedColor>
+          <disabledColor>
+            <r>0.5</r>
+            <g>0.5</g>
+            <b>0.5</b>
+            <a>0.5</a>
+          </disabledColor>
+        </Property>
+      </Properties>
+    </Component>
+  </Components>
+  <Children>
+    <GameObject name="Background">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>0</x>
+              <y>0</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>1</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>-24</x>
+              <y>0</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>0.1</r>
+              <g>0.1</g>
+              <b>0.1</b>
+              <a>0.8</a>
+            </Property>
+            <Property name="sprite" type="UnityEngine.Sprite">
+              <Name>RoundedRect</Name>
+            </Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+    <GameObject name="Checkmark">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>0</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>0</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>20</x>
+              <y>20</y>
+            </Property>
+            <Property name="pivot" type="UnityEngine.Vector2">
+              <x>0</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchoredPosition" type="UnityEngine.Vector2">
+              <x>4</x>
+              <y>0</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>1</r>
+              <g>1</g>
+              <b>1</b>
+              <a>1</a>
+            </Property>
+            <Property name="sprite" type="UnityEngine.Sprite">
+              <Name>Checkmark</Name>
+            </Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+    <GameObject name="Label">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>0</x>
+              <y>0</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>1</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>-28</x>
+              <y>0</y>
+            </Property>
+            <Property name="pivot" type="UnityEngine.Vector2">
+              <x>0.5</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchoredPosition" type="UnityEngine.Vector2">
+              <x>14</x>
+              <y>0</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="TMPro.TextMeshProUGUI">
+          <Properties>
+            <Property name="text" type="string">Filter Label</Property>
+            <Property name="fontSize" type="float">14</Property>
+            <Property name="color" type="UnityEngine.Color">
+              <r>1</r>
+              <g>1</g>
+              <b>1</b>
+              <a>1</a>
+            </Property>
+            <Property name="alignment" type="TMPro.TextAlignmentOptions">Left</Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+    <GameObject name="Icon">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>20</x>
+              <y>20</y>
+            </Property>
+            <Property name="pivot" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchoredPosition" type="UnityEngine.Vector2">
+              <x>-4</x>
+              <y>0</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>1</r>
+              <g>1</g>
+              <b>1</b>
+              <a>0.5</a>
+            </Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+  </Children>
+</GameObject>

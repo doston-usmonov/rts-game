@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameObject xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="ArtilleryMapIndicator">
+  <Components>
+    <Component type="UnityEngine.RectTransform">
+      <Properties>
+        <Property name="anchorMin" type="UnityEngine.Vector2">
+          <x>0.5</x>
+          <y>0.5</y>
+        </Property>
+        <Property name="anchorMax" type="UnityEngine.Vector2">
+          <x>0.5</x>
+          <y>0.5</y>
+        </Property>
+        <Property name="sizeDelta" type="UnityEngine.Vector2">
+          <x>24</x>
+          <y>24</y>
+        </Property>
+      </Properties>
+    </Component>
+    <Component type="RTS.UI.ArtilleryMapIndicator">
+      <Properties>
+        <Property name="deploymentIndicator" type="UnityEngine.UI.Image" />
+        <Property name="ammoIndicator" type="UnityEngine.UI.Image" />
+      </Properties>
+    </Component>
+  </Components>
+  <Children>
+    <GameObject name="RangeIndicator">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>0.5</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>0.5</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>100</x>
+              <y>100</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>1.0</r>
+              <g>0.6</g>
+              <b>0.2</b>
+              <a>0.3</a>
+            </Property>
+            <Property name="sprite" type="UnityEngine.Sprite">
+              <Name>CircleRange</Name>
+            </Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+    <GameObject name="UnitIcon">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>0.5</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>0.5</x>
+              <y>0.5</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>24</x>
+              <y>24</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>1.0</r>
+              <g>0.6</g>
+              <b>0.2</b>
+              <a>1.0</a>
+            </Property>
+            <Property name="sprite" type="UnityEngine.Sprite">
+              <Name>ArtilleryIcon</Name>
+            </Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+    <GameObject name="DeploymentStatus">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>1</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>1</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>8</x>
+              <y>8</y>
+            </Property>
+            <Property name="pivot" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>1</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>1.0</r>
+              <g>0.6</g>
+              <b>0.2</b>
+              <a>1.0</a>
+            </Property>
+            <Property name="sprite" type="UnityEngine.Sprite">
+              <Name>Circle</Name>
+            </Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+    <GameObject name="AmmoBar">
+      <Components>
+        <Component type="UnityEngine.RectTransform">
+          <Properties>
+            <Property name="anchorMin" type="UnityEngine.Vector2">
+              <x>0</x>
+              <y>0</y>
+            </Property>
+            <Property name="anchorMax" type="UnityEngine.Vector2">
+              <x>1</x>
+              <y>0</y>
+            </Property>
+            <Property name="sizeDelta" type="UnityEngine.Vector2">
+              <x>-4</x>
+              <y>4</y>
+            </Property>
+            <Property name="pivot" type="UnityEngine.Vector2">
+              <x>0</x>
+              <y>0</y>
+            </Property>
+            <Property name="anchoredPosition" type="UnityEngine.Vector2">
+              <x>2</x>
+              <y>-6</y>
+            </Property>
+          </Properties>
+        </Component>
+        <Component type="UnityEngine.UI.Image">
+          <Properties>
+            <Property name="color" type="UnityEngine.Color">
+              <r>0.8</r>
+              <g>0.8</g>
+              <b>0.2</b>
+              <a>1.0</a>
+            </Property>
+            <Property name="type" type="UnityEngine.UI.Image+Type">Filled</Property>
+            <Property name="fillMethod" type="UnityEngine.UI.Image+FillMethod">Horizontal</Property>
+          </Properties>
+        </Component>
+      </Components>
+    </GameObject>
+  </Children>
+</GameObject>
