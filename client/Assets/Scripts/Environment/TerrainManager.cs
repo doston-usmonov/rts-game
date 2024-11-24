@@ -43,12 +43,12 @@ public class TerrainManager : MonoBehaviour
         public Texture2D LoyNormalXarita;
         
         // Shader parametrlari
-        private static readonly int AsosiyTeksturaID = Shader.PropertyToID("_MainTex");
-        private static readonly int NormalXaritaID = Shader.PropertyToID("_BumpMap");
-        private static readonly int NamlikXaritaID = Shader.PropertyToID("_NamlikMap");
-        private static readonly int QorXaritaID = Shader.PropertyToID("_QorMap");
-        private static readonly int MuzXaritaID = Shader.PropertyToID("_MuzMap");
-        private static readonly int LoyXaritaID = Shader.PropertyToID("_LoyMap");
+        public static readonly int AsosiyTeksturaID = Shader.PropertyToID("_MainTex");
+        public static readonly int NormalXaritaID = Shader.PropertyToID("_BumpMap");
+        public static readonly int NamlikXaritaID = Shader.PropertyToID("_NamlikMap");
+        public static readonly int QorXaritaID = Shader.PropertyToID("_QorMap");
+        public static readonly int MuzXaritaID = Shader.PropertyToID("_MuzMap");
+        public static readonly int LoyXaritaID = Shader.PropertyToID("_LoyMap");
         
         // Tekstura o'tish parametrlari
         public float TeksturaOtishTezligi = 1f;
@@ -110,30 +110,30 @@ public class TerrainManager : MonoBehaviour
         if (yerTekstura.AsosiyTekstura != null)
         {
             // Asosiy teksturani o'rnatish
-            Shader.SetGlobalTexture(yerTekstura.AsosiyTeksturaID, yerTekstura.AsosiyTekstura);
+            Shader.SetGlobalTexture(YerTeksturaTizimi.AsosiyTeksturaID, yerTekstura.AsosiyTekstura);
             
             // Qo'shimcha tekstura xaritalarini o'rnatish
             if (yerTekstura.NamlikTeksturasi != null)
             {
-                Shader.SetGlobalTexture(yerTekstura.NamlikXaritaID, yerTekstura.NamlikTeksturasi);
+                Shader.SetGlobalTexture(YerTeksturaTizimi.NamlikXaritaID, yerTekstura.NamlikTeksturasi);
                 Shader.SetGlobalFloat("_NamlikKoef", yerTekstura.joriyNamlikKoef);
             }
             
             if (yerTekstura.QorTeksturasi != null)
             {
-                Shader.SetGlobalTexture(yerTekstura.QorXaritaID, yerTekstura.QorTeksturasi);
+                Shader.SetGlobalTexture(YerTeksturaTizimi.QorXaritaID, yerTekstura.QorTeksturasi);
                 Shader.SetGlobalFloat("_QorKoef", yerTekstura.joriyQorKoef);
             }
             
             if (yerTekstura.MuzTeksturasi != null)
             {
-                Shader.SetGlobalTexture(yerTekstura.MuzXaritaID, yerTekstura.MuzTeksturasi);
+                Shader.SetGlobalTexture(YerTeksturaTizimi.MuzXaritaID, yerTekstura.MuzTeksturasi);
                 Shader.SetGlobalFloat("_MuzKoef", yerTekstura.joriyMuzKoef);
             }
             
             if (yerTekstura.LoyTeksturasi != null)
             {
-                Shader.SetGlobalTexture(yerTekstura.LoyXaritaID, yerTekstura.LoyTeksturasi);
+                Shader.SetGlobalTexture(YerTeksturaTizimi.LoyXaritaID, yerTekstura.LoyTeksturasi);
                 Shader.SetGlobalFloat("_LoyKoef", yerTekstura.joriyLoyKoef);
             }
         }
@@ -144,7 +144,7 @@ public class TerrainManager : MonoBehaviour
         // Asosiy normal xaritani o'rnatish
         if (yerTekstura.AsosiyNormalXarita != null)
         {
-            Shader.SetGlobalTexture(yerTekstura.NormalXaritaID, yerTekstura.AsosiyNormalXarita);
+            Shader.SetGlobalTexture(YerTeksturaTizimi.NormalXaritaID, yerTekstura.AsosiyNormalXarita);
         }
         
         // Qo'shimcha normal xaritalarni aralashtirish

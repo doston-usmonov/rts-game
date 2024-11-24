@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using RTS.Units;
+using RTS.Units.Combat;
 
 namespace RTS.UI
 {

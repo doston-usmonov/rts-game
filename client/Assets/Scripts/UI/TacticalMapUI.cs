@@ -1,13 +1,16 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using TMPro;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using RTS.Buildings;
+using System.Threading.Tasks;
 using RTS.Units;
+using RTS.Units.Combat;
 using RTS.Commands;
 using RTS.Vision;
-using TMPro;
+using RTS.Buildings;
+using RTS;
 
 namespace RTS.UI
 {
@@ -61,7 +64,7 @@ namespace RTS.UI
 
         [Header("Enemy Detection")]
         public GameObject enemyIndicatorPrefab;
-        public Color enemyUnitColor = new Color(1f, 0.2f, 0.2f, 0.8f);
+        public Color enemyIndicatorColor = new Color(1f, 0.2f, 0.2f, 0.8f);
         public Color enemyStealthUnitColor = new Color(1f, 0.2f, 0.2f, 0.4f);
         public float visionUpdateInterval = 0.5f;
 
@@ -132,54 +135,48 @@ namespace RTS.UI
         [SerializeField] private float terrainUpdateInterval = 0.5f;
         private float lastTerrainUpdateTime;
 
-        private Dictionary<HeavyDefenseBunker, GameObject> bunkerIndicators = new Dictionary<HeavyDefenseBunker, GameObject>();
-        private Dictionary<Artillery, GameObject> artilleryIndicators = new Dictionary<Artillery, GameObject>();
-        private Dictionary<EnemyUnit, GameObject> enemyIndicators = new Dictionary<EnemyUnit, GameObject>();
-        private RenderTexture mapRenderTexture;
-        private Camera tacticalCamera;
-        private float nextUpdateTime;
-        private float nextVisionUpdate;
+        [Header("UI References")]
+        [SerializeField] private Camera tacticalCamera;
+        [SerializeField] private RectTransform selectionBox;
+        [SerializeField] private Image selectionBoxImage;
+        [SerializeField] private Color selectionBoxColor = new Color(0f, 1f, 0f, 0.3f);
 
-        private float currentZoom = 1f;
-        private Vector2 lastDragPosition;
+        [Header("Selection")]
+        private Vector2 dragStartPosition;
         private bool isDragging;
+        private List<Unit> selectedUnits = new List<Unit>();
+        private Dictionary<Artillery, GameObject> artilleryIndicators = new Dictionary<Artillery, GameObject>();
+        private Dictionary<HeavyDefenseBunker, GameObject> bunkerIndicators = new Dictionary<HeavyDefenseBunker, GameObject>();
+        private Dictionary<EnemyUnit, GameObject> enemyIndicators = new Dictionary<EnemyUnit, GameObject>();
+        private HashSet<MonoBehaviour> unitsUnderAttack = new HashSet<MonoBehaviour>();
         private HashSet<Artillery> lowAmmoUnits = new HashSet<Artillery>();
         private HashSet<HeavyDefenseBunker> fortifiedBunkers = new HashSet<HeavyDefenseBunker>();
-        private HashSet<MonoBehaviour> unitsUnderAttack = new HashSet<MonoBehaviour>();
         private HashSet<EnemyUnit> detectedEnemies = new HashSet<EnemyUnit>();
 
+        [Header("Map")]
+        private RenderTexture mapRenderTexture;
+        private float nextUpdateTime;
+        private float nextVisionUpdate;
+        private float currentZoom = 1f;
+        private Vector2 lastClickPosition;
+        private GameObject activeCommandPanel;
+
+        [Header("Groups")]
+        private Dictionary<int, HashSet<MonoBehaviour>> unitGroups = new Dictionary<int, HashSet<MonoBehaviour>>();
+        private Dictionary<MonoBehaviour, GameObject> statsOverlays = new Dictionary<MonoBehaviour, GameObject>();
+        
+        [Header("Filters")]
         private List<CustomFilterConfig> customFilters = new List<CustomFilterConfig>();
         private Dictionary<KeyCode, System.Action> keyboardShortcuts = new Dictionary<KeyCode, System.Action>();
 
-        private HashSet<MonoBehaviour> selectedUnits = new HashSet<MonoBehaviour>();
-        private GameObject activeCommandPanel;
-        private Vector2 lastClickPosition;
-        private bool isDraggingSelection;
-        private Vector2 selectionStartPos;
-        private RectTransform selectionBox;
-        private RectTransform dragSelectionBox;
-        private Vector2 dragStartPosition;
-
-        private Dictionary<MonoBehaviour, GameObject> statsOverlays = new Dictionary<MonoBehaviour, GameObject>();
-        private Dictionary<int, HashSet<MonoBehaviour>> unitGroups = new Dictionary<int, HashSet<MonoBehaviour>>();
-        private Dictionary<MonoBehaviour, TextMeshProUGUI> groupNumbers = new Dictionary<MonoBehaviour, TextMeshProUGUI>();
-
-        private Dictionary<EnemyUnit, GameObject> enemyInfoPanels = new Dictionary<EnemyUnit, GameObject>();
-        private RenderTexture minimapRenderTexture;
-        private Camera minimapCamera;
-        private Dictionary<MonoBehaviour, GameObject> minimapIcons = new Dictionary<MonoBehaviour, GameObject>();
-
-        private Dictionary<int, GroupData> groupData = new Dictionary<int, GroupData>();
-        private Dictionary<MonoBehaviour, GameObject> groupMarkers = new Dictionary<MonoBehaviour, GameObject>();
-        private List<FilterPreset> filterPresets = new List<FilterPreset>();
-        private GameObject filterPanel;
-        private List<LineRenderer> waypointLines = new List<LineRenderer>();
-
-        private Dictionary<int, GroupFormationData> groupFormations = new Dictionary<int, GroupFormationData>();
-        private GameObject formationPreview;
-
         private void Start()
         {
+            if (selectionBox != null && selectionBoxImage != null)
+            {
+                selectionBoxImage.color = selectionBoxColor;
+                selectionBox.gameObject.SetActive(false);
+            }
+
             InitializeTacticalMap();
             InitializeFilters();
             InitializeKeyboardShortcuts();
@@ -191,11 +188,10 @@ namespace RTS.UI
             InitializeGroupCustomization();
             InitializeAdvancedFiltering();
             InitializeFormations();
-            StartCoroutine(UpdateTacticalMapRoutine());
+
             StartCoroutine(UpdateVisionRoutine());
             StartCoroutine(UpdateStatsRoutine());
             StartCoroutine(UpdateEnemyInfoRoutine());
-            StartCoroutine(UpdateTacticalOverlay());
         }
 
         private void InitializeTacticalMap()
@@ -254,7 +250,16 @@ namespace RTS.UI
             }
 
             // Load saved custom filters
-            LoadCustomFilters();
+            var savedData = PlayerPrefs.GetString("CustomFilters", "");
+            if (!string.IsNullOrEmpty(savedData))
+            {
+                customFilters = JsonUtility.FromJson<CustomFiltersData>(savedData).filters;
+
+                foreach (var filter in customFilters)
+                {
+                    CreateCustomFilterUI(filter);
+                }
+            }
         }
 
         private void InitializeSelectionSystem()
@@ -272,7 +277,7 @@ namespace RTS.UI
         {
             // Create drag selection box
             GameObject dragBoxObj = new GameObject("DragSelectionBox");
-            dragSelectionBox = dragBoxObj.AddComponent<RectTransform>();
+            RectTransform dragSelectionBox = dragBoxObj.AddComponent<RectTransform>();
             Image dragBoxImage = dragBoxObj.AddComponent<Image>();
             dragBoxImage.color = dragBoxColor;
 
@@ -297,7 +302,7 @@ namespace RTS.UI
         private void InitializeMinimap()
         {
             // Create minimap render texture
-            minimapRenderTexture = new RenderTexture(
+            RenderTexture minimapRenderTexture = new RenderTexture(
                 (int)minimapSize.x,
                 (int)minimapSize.y,
                 16,
@@ -306,7 +311,7 @@ namespace RTS.UI
 
             // Create and setup minimap camera
             GameObject minimapCameraObj = new GameObject("MinimapCamera");
-            minimapCamera = minimapCameraObj.AddComponent<Camera>();
+            Camera minimapCamera = minimapCameraObj.AddComponent<Camera>();
             minimapCamera.orthographic = true;
             minimapCamera.cullingMask = LayerMask.GetMask("Terrain", "Units", "Buildings");
             minimapCamera.clearFlags = CameraClearFlags.SolidColor;
@@ -332,7 +337,7 @@ namespace RTS.UI
             var savedData = PlayerPrefs.GetString("GroupCustomization", "");
             if (!string.IsNullOrEmpty(savedData))
             {
-                groupData = JsonUtility.FromJson<Dictionary<int, GroupData>>(savedData);
+                Dictionary<int, GroupData> groupData = JsonUtility.FromJson<Dictionary<int, GroupData>>(savedData);
             }
         }
 
@@ -342,7 +347,7 @@ namespace RTS.UI
             var savedPresets = PlayerPrefs.GetString("FilterPresets", "");
             if (!string.IsNullOrEmpty(savedPresets))
             {
-                filterPresets = JsonUtility.FromJson<List<FilterPreset>>(savedPresets);
+                List<FilterPreset> filterPresets = JsonUtility.FromJson<List<FilterPreset>>(savedPresets);
             }
 
             CreateFilterPanel();
@@ -767,7 +772,7 @@ namespace RTS.UI
             return unit is Artillery || unit is HeavyDefenseBunker;
         }
 
-        private void OnScroll(PointerEventData eventData)
+        public void OnScroll(PointerEventData eventData)
         {
             float zoomDelta = eventData.scrollDelta.y * zoomSpeed;
             float newZoom = Mathf.Clamp(currentZoom + zoomDelta, minZoom, maxZoom);
@@ -1090,94 +1095,60 @@ namespace RTS.UI
             Destroy(lineObj, updateInterval);
         }
 
-        private void OnBeginDrag(PointerEventData eventData)
+        public void OnBeginDrag(PointerEventData eventData)
         {
-            if (eventData.button == PointerEventData.InputButton.Left)
-            {
-                isDragging = true;
-                dragStartPosition = eventData.position;
-                dragSelectionBox.gameObject.SetActive(true);
-                UpdateDragSelectionBox(eventData.position);
-            }
+            if (!eventData.IsPointerOverGameObject()) return;
+
+            isDragging = true;
+            dragStartPosition = eventData.position;
+            selectionBox.gameObject.SetActive(true);
+            selectionBox.position = dragStartPosition;
+            selectionBox.sizeDelta = Vector2.zero;
         }
 
-        private void OnDrag(PointerEventData eventData)
+        public void OnDrag(PointerEventData eventData)
         {
-            if (isDragging)
-            {
-                UpdateDragSelectionBox(eventData.position);
-            }
+            if (!isDragging) return;
+
+            Vector2 dragCurrentPosition = eventData.position;
+            Vector2 selectionSize = dragCurrentPosition - dragStartPosition;
+
+            selectionBox.sizeDelta = new Vector2(Mathf.Abs(selectionSize.x), Mathf.Abs(selectionSize.y));
+            selectionBox.position = dragStartPosition + selectionSize * 0.5f;
         }
 
-        private void OnEndDrag(PointerEventData eventData)
+        public void OnEndDrag(PointerEventData eventData)
         {
-            if (isDragging)
-            {
-                isDragging = false;
-                dragSelectionBox.gameObject.SetActive(false);
-                SelectUnitsInDragBox(eventData.position);
-            }
+            if (!isDragging) return;
+
+            isDragging = false;
+            selectionBox.gameObject.SetActive(false);
+
+            // Convert screen coordinates to world coordinates
+            Vector2 min = Vector2.Min(dragStartPosition, eventData.position);
+            Vector2 max = Vector2.Max(dragStartPosition, eventData.position);
+
+            // Select units within the rectangle
+            SelectUnitsInRect(min, max);
         }
 
-        private void UpdateDragSelectionBox(Vector2 currentMousePos)
-        {
-            if (dragSelectionBox == null) return;
-
-            Vector2 boxStart = dragStartPosition;
-            Vector2 boxEnd = currentMousePos;
-
-            // Calculate box position and size
-            float width = Mathf.Abs(boxEnd.x - boxStart.x);
-            float height = Mathf.Abs(boxEnd.y - boxStart.y);
-
-            dragSelectionBox.sizeDelta = new Vector2(width, height);
-            dragSelectionBox.position = boxStart + (boxEnd - boxStart) * 0.5f;
-        }
-
-        private void SelectUnitsInDragBox(Vector2 endPosition)
+        private void SelectUnitsInRect(Vector2 min, Vector2 max)
         {
             if (!Input.GetKey(KeyCode.LeftShift))
             {
                 ClearSelection();
             }
 
-            Rect selectionRect = GetScreenSpaceSelectionRect(dragStartPosition, endPosition);
-
-            // Check artillery units
-            foreach (var pair in artilleryIndicators)
+            var units = FindObjectsOfType<Unit>();
+            foreach (var unit in units)
             {
-                if (pair.Key == null || pair.Value == null) continue;
-
-                Vector2 screenPos = tacticalCamera.WorldToScreenPoint(pair.Key.transform.position);
-                if (selectionRect.Contains(screenPos))
+                Vector2 screenPos = Camera.main.WorldToScreenPoint(unit.transform.position);
+                if (screenPos.x >= min.x && screenPos.x <= max.x &&
+                    screenPos.y >= min.y && screenPos.y <= max.y)
                 {
-                    SelectUnit(pair.Key);
+                    SelectUnit(unit);
                 }
             }
-
-            // Check bunker units
-            foreach (var pair in bunkerIndicators)
-            {
-                if (pair.Key == null || pair.Value == null) continue;
-
-                Vector2 screenPos = tacticalCamera.WorldToScreenPoint(pair.Key.transform.position);
-                if (selectionRect.Contains(screenPos))
-                {
-                    SelectUnit(pair.Key);
-                }
-            }
-
-            UpdateCommandPanel();
-        }
-
-        private Rect GetScreenSpaceSelectionRect(Vector2 startPos, Vector2 endPos)
-        {
-            float minX = Mathf.Min(startPos.x, endPos.x);
-            float maxX = Mathf.Max(startPos.x, endPos.x);
-            float minY = Mathf.Min(startPos.y, endPos.y);
-            float maxY = Mathf.Max(startPos.y, endPos.y);
-
-            return new Rect(minX, minY, maxX - minX, maxY - minY);
         }
 
         private System.Collections.IEnumerator UpdateVisionRoutine()
@@ -1294,6 +1265,8 @@ namespace RTS.UI
             {
                 CreateOrUpdateGroupNumber(unit, groupIndex);
             }
+
+            SaveGroupCustomization();
         }
 
         private void SelectUnitGroup(int groupIndex)
@@ -2527,7 +2500,7 @@ namespace RTS.UI
         public void Initialize(EnemyUnit enemy)
         {
             enemyUnit = enemy;
-            normalColor = GetComponent<TacticalMapUI>().enemyUnitColor;
+            normalColor = GetComponent<TacticalMapUI>().enemyIndicatorColor;
             stealthColor = GetComponent<TacticalMapUI>().enemyStealthUnitColor;
 
             if (iconImage != null)

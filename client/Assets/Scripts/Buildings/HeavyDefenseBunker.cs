@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using RTS.Core;
 using RTS.Units;
+using RTS.Units.Combat;
+using RTS.Core;
 
 namespace RTS.Buildings
 {
@@ -39,14 +39,14 @@ namespace RTS.Buildings
         public GameObject[] weaponUpgradeModels;
 
         // Garrison management
-        private List<Unit> garrisonedUnits = new List<Unit>();
-        private Dictionary<Unit, Vector3> exitPositions = new Dictionary<Unit, Vector3>();
+        private List<RTS.Units.Unit> garrisonedUnits = new List<RTS.Units.Unit>();
+        private Dictionary<RTS.Units.Unit, Vector3> exitPositions = new Dictionary<RTS.Units.Unit, Vector3>();
 
         // Weapon system state
         private bool isAntiVehicleTurretActive = true;
         private bool isAntiAirTurretActive = true;
-        private Unit currentGroundTarget;
-        private Unit currentAirTarget;
+        private RTS.Units.Unit currentGroundTarget;
+        private RTS.Units.Unit currentAirTarget;
         private float lastGroundAttackTime;
         private float lastAirAttackTime;
 
@@ -83,7 +83,7 @@ namespace RTS.Buildings
 
         #region Garrison Management
 
-        public bool GarrisonUnit(Unit unit)
+        public bool GarrisonUnit(RTS.Units.Unit unit)
         {
             if (garrisonedUnits.Count >= maxGarrisonCapacity || 
                 !CanBeGarrisoned(unit) || 
@@ -103,7 +103,7 @@ namespace RTS.Buildings
             return true;
         }
 
-        public bool UngarrisonUnit(Unit unit)
+        public bool UngarrisonUnit(RTS.Units.Unit unit)
         {
             if (!garrisonedUnits.Contains(unit))
                 return false;
@@ -125,11 +125,11 @@ namespace RTS.Buildings
             return false;
         }
 
-        private bool CanBeGarrisoned(Unit unit)
+        private bool CanBeGarrisoned(RTS.Units.Unit unit)
         {
             // Check if unit type is allowed to garrison
-            return unit is InfantryUnit || 
-                   (unit is LightVehicleUnit && garrisonedUnits.Count < maxGarrisonCapacity/2);
+            return unit is RTS.Units.InfantryUnit || 
+                   (unit is RTS.Units.LightVehicleUnit && garrisonedUnits.Count < maxGarrisonCapacity/2);
         }
 
         private Vector3 FindGarrisonExitPosition()
@@ -211,7 +211,7 @@ namespace RTS.Buildings
             }
         }
 
-        public void SetGroundTarget(Unit target)
+        public void SetGroundTarget(RTS.Units.Unit target)
         {
             if (target == null || Vector3.Distance(transform.position, target.transform.position) > groundAttackRange)
             {
@@ -222,7 +222,7 @@ namespace RTS.Buildings
             currentGroundTarget = target;
         }
 
-        public void SetAirTarget(Unit target)
+        public void SetAirTarget(RTS.Units.Unit target)
         {
             if (target == null || Vector3.Distance(transform.position, target.transform.position) > airAttackRange)
             {
@@ -290,15 +290,15 @@ namespace RTS.Buildings
             Collider[] colliders = Physics.OverlapSphere(transform.position, repairRadius);
             foreach (Collider col in colliders)
             {
-                Unit unit = col.GetComponent<Unit>();
-                if (unit != null && unit.factionType == factionType && unit.Health < unit.MaxHealth)
+                RTS.Units.Unit unit = col.GetComponent<RTS.Units.Unit>();
+                if (unit != null && unit.FactionType == factionType && unit.Health < unit.MaxHealth)
                 {
                     RepairUnit(unit);
                 }
             }
         }
 
-        private void RepairUnit(Unit unit)
+        private void RepairUnit(RTS.Units.Unit unit)
         {
             float healAmount = repairRate * repairTickInterval;
             unit.Heal(healAmount);
@@ -393,18 +393,20 @@ namespace RTS.Buildings
 
         #endregion
 
-        protected override void OnDrawGizmosSelected()
+        protected override void OnDrawGizmos()
         {
-            base.OnDrawGizmosSelected();
+            base.OnDrawGizmos();
+
+            if (!Application.isPlaying) return;
 
             // Draw repair radius
-            Gizmos.color = Color.green;
+            Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, repairRadius);
 
             // Draw attack ranges
-            Gizmos.color = Color.red;
+            Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, groundAttackRange);
-            Gizmos.color = Color.blue;
+            Gizmos.color = new Color(0f, 0f, 1f, 0.3f);
             Gizmos.DrawWireSphere(transform.position, airAttackRange);
         }
     }

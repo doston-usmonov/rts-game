@@ -1,34 +1,40 @@
 using UnityEngine;
-using RTS.Core;
+using RTS.Units.Combat;
 using RTS.Factions;
+using RTS.Resources;
+using RTS.Buildings;
 
 namespace RTS.Units
 {
     public class DroneController : Unit
     {
         [Header("Drone Settings")]
-        public float gatheringRate = 2f;
-        public float gatheringRange = 3f;
-        public float returnRange = 5f;
-        public float cargoCapacity = 50f;
-
-        private float currentCargo = 0f;
-        private bool isGathering = false;
+        [SerializeField] private float gatherRadius = 5f;
+        [SerializeField] private float resourceGatherRate = 1f;
+        [SerializeField] private float harvestAmount = 5f;
+        [SerializeField] private float depositRange = 2f;
+        [SerializeField] protected float gatheringRate = 5f;
+        [SerializeField] protected float maxCarryCapacity = 100f;
+        protected float currentLoad = 0f;
+        
         private ResourceNode currentResource;
-        private Building dropOffPoint;
-
-        public bool IsGathering => isGathering;
-        public float GatheringRate => gatheringRate;
+        private Building depositTarget;
+        private bool isHarvesting;
+        
+        public bool IsGathering { get; private set; }
+        public float GatheringRate => resourceGatherRate;
+        public float CurrentLoad => currentLoad;
 
         protected override void Awake()
         {
             base.Awake();
-            type = UnitType.Drone;
+            // Drone-specific initialization
         }
 
         public override void Initialize(FactionType faction)
         {
             base.Initialize(faction);
+            // Additional drone initialization
             
             // Register with TechnologicalFaction
             var techFaction = GameObject.FindObjectOfType<TechnologicalFaction>();
@@ -40,93 +46,38 @@ namespace RTS.Units
 
         public void AssignResourceGathering(ResourceNode resource, Building dropOff)
         {
-            currentResource = resource;
-            dropOffPoint = dropOff;
             StartGathering();
+            currentResource = resource;
+            depositTarget = dropOff;
         }
 
-        private void StartGathering()
+        public void StartGathering()
         {
-            if (currentResource == null || dropOffPoint == null) return;
-
-            isGathering = true;
-            MoveTo(currentResource.transform.position);
+            IsGathering = true;
+            isHarvesting = true;
         }
 
-        private void Update()
+        public void StopGathering()
         {
-            if (!isGathering) return;
-
-            if (currentResource != null && currentCargo < cargoCapacity)
-            {
-                // Check if we're in range of the resource
-                float distanceToResource = Vector3.Distance(transform.position, currentResource.transform.position);
-                if (distanceToResource <= gatheringRange)
-                {
-                    GatherResources();
-                }
-            }
-            else if (currentCargo >= cargoCapacity || currentResource == null)
-            {
-                ReturnResources();
-            }
+            IsGathering = false;
+            isHarvesting = false;
         }
 
-        private void GatherResources()
+        protected override void Update()
         {
-            if (currentResource.HasResources)
-            {
-                float gathered = currentResource.GatherResource(gatheringRate * Time.deltaTime);
-                currentCargo += gathered;
+            base.Update();
+            
+            if (!IsGathering) return;
 
-                if (currentCargo >= cargoCapacity)
-                {
-                    ReturnResources();
-                }
-            }
-            else
+            if (isHarvesting && currentResource != null)
             {
-                // Resource depleted, find new resource or return to base
-                ReturnResources();
-            }
-        }
-
-        private void ReturnResources()
-        {
-            if (dropOffPoint != null)
-            {
-                MoveTo(dropOffPoint.transform.position);
-                
-                // Check if we're in range of the drop-off point
-                float distanceToDropOff = Vector3.Distance(transform.position, dropOffPoint.transform.position);
-                if (distanceToDropOff <= returnRange)
+                if (Vector3.Distance(transform.position, currentResource.transform.position) <= gatherRadius)
                 {
-                    DepositResources();
-                }
-            }
-        }
-
-        private void DepositResources()
-        {
-            if (currentCargo > 0)
-            {
-                // Add resources to faction's stockpile
-                var techFaction = GameObject.FindObjectOfType<TechnologicalFaction>();
-                if (techFaction != null)
-                {
-                    techFaction.gold += currentCargo;
-                }
-
-                currentCargo = 0;
-                
-                // Return to gathering if resource still exists
-                if (currentResource != null && currentResource.HasResources)
-                {
-                    StartGathering();
-                }
-                else
-                {
-                    isGathering = false;
+                    float harvested = currentResource.Harvest(harvestAmount);
+                    if (harvested > 0 && depositTarget != null)
+                    {
+                        MoveTo(depositTarget.transform.position);
+                    }
                 }
             }
         }
@@ -134,9 +85,31 @@ namespace RTS.Units
         public override void Stop()
         {
             base.Stop();
-            isGathering = false;
+            isHarvesting = false;
             currentResource = null;
-            dropOffPoint = null;
+            depositTarget = null;
+        }
+
+        protected override void OnDrawGizmos()
+        {
+            base.OnDrawGizmos();
+
+            if (!Application.isPlaying) return;
+
+            if (isSelected)
+            {
+                // Draw deposit range
+                Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
+                Gizmos.DrawWireSphere(transform.position, depositRange);
+
+                // Draw gathering path if active
+                if (currentResource != null && depositTarget != null)
+                {
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawLine(transform.position, currentResource.transform.position);
+                    Gizmos.DrawLine(currentResource.transform.position, depositTarget.transform.position);
+                }
+            }
         }
 
         private void OnDestroy()
@@ -147,19 +120,6 @@ namespace RTS.Units
             {
                 techFaction.UnregisterDrone(this);
             }
-        }
-
-        protected override void OnDrawGizmosSelected()
-        {
-            base.OnDrawGizmosSelected();
-            
-            // Draw gathering range
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, gatheringRange);
-            
-            // Draw return range
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(transform.position, returnRange);
         }
     }
 }

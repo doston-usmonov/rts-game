@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RTS.Units;
+using RTS.Units.Combat;
 using RTS.Core;
 
 namespace RTS.Factions
@@ -32,7 +34,7 @@ namespace RTS.Factions
         {
             base.Initialize();
             factionName = "Heavy Assault Division";
-            type = FactionType.HeavyAssaultFaction;
+            type = (RTS.Core.FactionType)FactionType.HeavyAssaultFaction;
 
             // Apply faction-specific stat modifications
             baseArmor *= armorBonus;
@@ -199,15 +201,40 @@ namespace RTS.Factions
             return power >= requiredPower;
         }
 
-        protected override void OnDrawGizmosSelected()
+        protected virtual void OnDrawGizmos()
         {
-            base.OnDrawGizmosSelected();
-            
-            // Visualize artillery range
-            if (lastArtilleryTime + artilleryCooldown > Time.time)
+            if (!Application.isPlaying) return;
+
+            // Draw territory boundaries
+            if (territoryPoints.Count > 0)
             {
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireSphere(transform.position, artilleryRadius);
+                Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
+                for (int i = 0; i < territoryPoints.Count; i++)
+                {
+                    Vector3 current = territoryPoints[i];
+                    Vector3 next = territoryPoints[(i + 1) % territoryPoints.Count];
+                    Gizmos.DrawLine(current, next);
+                }
+            }
+
+            // Draw unit positions
+            if (selectedUnits.Count > 0)
+            {
+                Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
+                foreach (var unit in selectedUnits)
+                {
+                    if (unit != null)
+                    {
+                        Gizmos.DrawWireSphere(unit.transform.position, 1f);
+                    }
+                }
+            }
+
+            // Draw strategic points
+            Gizmos.color = new Color(0f, 0f, 1f, 0.3f);
+            foreach (var point in strategicPoints)
+            {
+                Gizmos.DrawWireSphere(point, 2f);
             }
         }
     }

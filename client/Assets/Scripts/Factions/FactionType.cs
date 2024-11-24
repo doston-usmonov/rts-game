@@ -6,6 +6,9 @@ namespace RTS.Factions
         Player,
         Enemy,
         Neutral,
-        Ally
+        Ally,
+        TechnologicalFaction,
+        HeavyAssaultFaction,
+        GuerrillaFaction
     }
 }

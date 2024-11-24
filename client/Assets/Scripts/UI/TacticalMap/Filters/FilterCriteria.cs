@@ -1,11 +1,21 @@
-using System;
 using UnityEngine;
+using System;
 
-namespace RTS.UI.TacticalMap
+namespace RTS.UI.TacticalMap.Filters
 {
     [Serializable]
     public class FilterCriteria
     {
+        public enum FilterType
+        {
+            UnitType,
+            FactionType,
+            HealthThreshold,
+            AmmoThreshold,
+            Distance,
+            Custom
+        }
+
         public enum ComparisonType
         {
             Equal,
@@ -14,113 +24,73 @@ namespace RTS.UI.TacticalMap
             LessThan,
             GreaterThanOrEqual,
             LessThanOrEqual,
+            Between,
             Contains,
             NotContains
         }
 
-        public enum ValueType
+        [SerializeField] private FilterType filterType;
+        [SerializeField] private ComparisonType comparisonType;
+        [SerializeField] private string value;
+        [SerializeField] private float minValue;
+        [SerializeField] private float maxValue;
+        [SerializeField] private bool isEnabled = true;
+
+        public FilterType Type => filterType;
+        public ComparisonType Comparison => comparisonType;
+        public string StringValue => value;
+        public float MinValue => minValue;
+        public float MaxValue => maxValue;
+        public bool IsEnabled => isEnabled;
+
+        public void SetEnabled(bool enabled)
         {
-            Number,
-            Text,
-            Boolean
+            isEnabled = enabled;
         }
 
-        [SerializeField] private string propertyName;
-        [SerializeField] private ComparisonType comparison;
-        [SerializeField] private ValueType valueType;
-        [SerializeField] private string value;
-        
-        public string PropertyName => propertyName;
-        public ComparisonType Comparison => comparison;
-        public ValueType ValueType => valueType;
-        public string Value => value;
-
-        public FilterCriteria(string propertyName, ComparisonType comparison, ValueType valueType, string value)
+        public void SetValues(string value)
         {
-            this.propertyName = propertyName;
-            this.comparison = comparison;
-            this.valueType = valueType;
             this.value = value;
         }
 
-        public bool Evaluate(object target)
+        public void SetValues(float min, float max)
         {
-            if (target == null) return false;
-
-            var property = target.GetType().GetProperty(propertyName);
-            if (property == null) return false;
-
-            var targetValue = property.GetValue(target);
-            if (targetValue == null) return false;
-
-            switch (valueType)
-            {
-                case ValueType.Number:
-                    return EvaluateNumber(targetValue);
-                case ValueType.Text:
-                    return EvaluateText(targetValue);
-                case ValueType.Boolean:
-                    return EvaluateBoolean(targetValue);
-                default:
-                    return false;
-            }
+            minValue = min;
+            maxValue = max;
         }
 
-        private bool EvaluateNumber(object targetValue)
+        public bool Evaluate<T>(T value)
         {
-            if (!float.TryParse(value, out float filterValue)) return false;
-            float targetNumber = Convert.ToSingle(targetValue);
+            if (!isEnabled) return true;
 
-            switch (comparison)
+            switch (comparisonType)
             {
                 case ComparisonType.Equal:
-                    return Math.Abs(targetNumber - filterValue) < float.Epsilon;
+                    return value.Equals(this.value);
                 case ComparisonType.NotEqual:
-                    return Math.Abs(targetNumber - filterValue) > float.Epsilon;
-                case ComparisonType.GreaterThan:
-                    return targetNumber > filterValue;
-                case ComparisonType.LessThan:
-                    return targetNumber < filterValue;
-                case ComparisonType.GreaterThanOrEqual:
-                    return targetNumber >= filterValue;
-                case ComparisonType.LessThanOrEqual:
-                    return targetNumber <= filterValue;
-                default:
-                    return false;
-            }
-        }
-
-        private bool EvaluateText(object targetValue)
-        {
-            string targetText = targetValue.ToString();
-
-            switch (comparison)
-            {
-                case ComparisonType.Equal:
-                    return targetText.Equals(value, StringComparison.OrdinalIgnoreCase);
-                case ComparisonType.NotEqual:
-                    return !targetText.Equals(value, StringComparison.OrdinalIgnoreCase);
+                    return !value.Equals(this.value);
                 case ComparisonType.Contains:
-                    return targetText.Contains(value, StringComparison.OrdinalIgnoreCase);
+                    return value.ToString().Contains(this.value);
                 case ComparisonType.NotContains:
-                    return !targetText.Contains(value, StringComparison.OrdinalIgnoreCase);
+                    return !value.ToString().Contains(this.value);
                 default:
-                    return false;
-            }
-        }
-
-        private bool EvaluateBoolean(object targetValue)
-        {
-            if (!bool.TryParse(value, out bool filterValue)) return false;
-            bool targetBool = Convert.ToBoolean(targetValue);
-
-            switch (comparison)
-            {
-                case ComparisonType.Equal:
-                    return targetBool == filterValue;
-                case ComparisonType.NotEqual:
-                    return targetBool != filterValue;
-                default:
+                    if (value is IComparable comparable && float.TryParse(this.value, out float compareValue))
+                    {
+                        int comparison = comparable.CompareTo(compareValue);
+                        switch (comparisonType)
+                        {
+                            case ComparisonType.GreaterThan:
+                                return comparison > 0;
+                            case ComparisonType.LessThan:
+                                return comparison < 0;
+                            case ComparisonType.GreaterThanOrEqual:
+                                return comparison >= 0;
+                            case ComparisonType.LessThanOrEqual:
+                                return comparison <= 0;
+                            case ComparisonType.Between:
+                                return comparable.CompareTo(minValue) >= 0 && comparable.CompareTo(maxValue) <= 0;
+                        }
+                    }
                     return false;
             }
         }

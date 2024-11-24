@@ -1,141 +1,83 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System;
+using System.Collections;
+using RTS.Core.Pooling;
 
 namespace RTS.Effects
 {
-    public class ArtilleryShell : MonoBehaviour
+    public class ArtilleryShell : MonoBehaviour, IPoolable
     {
-        public float rotationSpeed = 360f;
-        public ParticleSystem trailEffect;
-        public AudioSource whistleSound;
-        public float lifetime = 5f;
-        public float damage = 100f;
-        public float splashRadius = 5f;
-        public LayerMask damageLayer;
+        public event Action<Vector3> OnExplode;
 
+        private Vector3 startPosition;
+        private Vector3 midPosition;
         private Vector3 targetPosition;
-        private float startTime;
-        private bool isActive = false;
-        private static ObjectPool<ArtilleryShell> shellPool;
-        private static ObjectPool<ParticleSystem> trailPool;
-        private static ObjectPool<AudioSource> audioPool;
+        private float timeOfFlight;
+        private float elapsedTime;
+        private float splashRadius;
+        private float damage;
+        private bool isActive;
 
-        private void Awake()
+        public void Initialize(Vector3 start, Vector3 mid, Vector3 target, float tof, float radius, float dmg)
         {
-            if (shellPool == null)
-            {
-                shellPool = new ObjectPool<ArtilleryShell>(CreateShellInstance, 10);
-            }
-            if (trailPool == null)
-            {
-                trailPool = new ObjectPool<ParticleSystem>(CreateTrailInstance, 10);
-            }
-            if (audioPool == null)
-            {
-                audioPool = new ObjectPool<AudioSource>(CreateAudioInstance, 5);
-            }
-        }
-
-        public void Initialize(Vector3 target)
-        {
+            startPosition = start;
+            midPosition = mid;
             targetPosition = target;
-            startTime = Time.time;
+            timeOfFlight = tof;
+            splashRadius = radius;
+            damage = dmg;
+            elapsedTime = 0f;
             isActive = true;
-            gameObject.SetActive(true);
 
-            // Get trail effect from pool
-            var trail = trailPool.GetObject();
-            trail.transform.parent = transform;
-            trail.transform.localPosition = Vector3.zero;
-            trail.Play();
-
-            // Get audio from pool
-            var audio = audioPool.GetObject();
-            audio.transform.parent = transform;
-            audio.transform.localPosition = Vector3.zero;
-            audio.Play();
+            StartCoroutine(FlightRoutine());
         }
 
-        private void Update()
+        private IEnumerator FlightRoutine()
         {
-            if (!isActive) return;
-
-            // Rotate the shell for visual effect
-            transform.Rotate(Vector3.forward * rotationSpeed * Time.deltaTime);
-
-            // Check lifetime
-            if (Time.time - startTime >= lifetime)
+            while (elapsedTime < timeOfFlight && isActive)
             {
-                Impact();
-            }
-        }
+                elapsedTime += Time.deltaTime;
+                float t = elapsedTime / timeOfFlight;
 
-        private void Impact()
-        {
-            // Apply damage
-            Collider[] hits = Physics.OverlapSphere(transform.position, splashRadius, damageLayer);
-            foreach (var hit in hits)
-            {
-                var damageable = hit.GetComponent<IDamageable>();
-                if (damageable != null)
+                // Quadratic Bezier curve for smooth arc
+                Vector3 a = Vector3.Lerp(startPosition, midPosition, t);
+                Vector3 b = Vector3.Lerp(midPosition, targetPosition, t);
+                transform.position = Vector3.Lerp(a, b, t);
+
+                // Rotate shell to face direction of travel
+                if (t < 1f)
                 {
-                    float distance = Vector3.Distance(transform.position, hit.transform.position);
-                    float damageMultiplier = 1f - (distance / splashRadius);
-                    damageable.TakeDamage(damage * damageMultiplier);
+                    Vector3 nextPos = Vector3.Lerp(Vector3.Lerp(startPosition, midPosition, t + 0.01f),
+                                                Vector3.Lerp(midPosition, targetPosition, t + 0.01f),
+                                                t + 0.01f);
+                    transform.rotation = Quaternion.LookRotation(nextPos - transform.position);
                 }
+
+                yield return null;
             }
 
-            // Return to pool
-            ReturnToPool();
+            if (isActive)
+            {
+                OnExplode?.Invoke(targetPosition);
+                ReturnToPool();
+            }
         }
 
-        private void ReturnToPool()
+        public void OnSpawn()
+        {
+            gameObject.SetActive(true);
+            isActive = true;
+        }
+
+        public void OnDespawn()
         {
             isActive = false;
             gameObject.SetActive(false);
-            shellPool.ReturnObject(this);
-
-            // Return effects to their pools
-            if (trailEffect != null)
-            {
-                trailEffect.Stop();
-                trailPool.ReturnObject(trailEffect);
-            }
-            if (whistleSound != null)
-            {
-                whistleSound.Stop();
-                audioPool.ReturnObject(whistleSound);
-            }
         }
 
-        private static ArtilleryShell CreateShellInstance()
+        public void ReturnToPool()
         {
-            var shell = Instantiate(Resources.Load<GameObject>("Prefabs/ArtilleryShell")).GetComponent<ArtilleryShell>();
-            shell.gameObject.SetActive(false);
-            return shell;
-        }
-
-        private static ParticleSystem CreateTrailInstance()
-        {
-            var trail = Instantiate(Resources.Load<ParticleSystem>("Prefabs/ShellTrail"));
-            trail.gameObject.SetActive(false);
-            return trail;
-        }
-
-        private static AudioSource CreateAudioInstance()
-        {
-            var audio = new GameObject("ShellAudio").AddComponent<AudioSource>();
-            audio.clip = Resources.Load<AudioClip>("Sounds/ShellWhistle");
-            audio.gameObject.SetActive(false);
-            return audio;
-        }
-
-        public static ArtilleryShell Spawn(Vector3 position, Vector3 target)
-        {
-            var shell = shellPool.GetObject();
-            shell.transform.position = position;
-            shell.Initialize(target);
-            return shell;
+            OnDespawn();
         }
     }
 }

@@ -1,4 +1,6 @@
 using UnityEngine;
+using RTS.Units.Combat;
+using RTS.Factions;
 using RTS.Core;
 using RTS.Units.Environment;
 
@@ -25,6 +27,14 @@ namespace RTS.Units
         [Header("Environment")]
         [SerializeField] private UnitEnvironmentState environmentState;
 
+        [Header("Tank Settings")]
+        [SerializeField] private new float crushDamage = 50f;  // Explicitly hiding base member
+        [SerializeField] private float crushRadius = 2f;
+        
+        [Header("Effects")]
+        [SerializeField] private ParticleSystem attackEffect;
+        [SerializeField] private ParticleSystem crushEffect;
+
         private float lastMainGunShot;
         private float lastSecondaryGunShot;
 
@@ -36,16 +46,56 @@ namespace RTS.Units
 
         private void InitializeComponents()
         {
-            if (!turret) turret = transform.Find("Turret");
-            if (!mainGun) mainGun = turret?.Find("MainGun");
+            base.InitializeComponents();
             
-            if (!mainGunEffect) mainGunEffect = mainGun?.GetComponentInChildren<ParticleSystem>();
-            if (!secondaryGunEffect) secondaryGunEffect = turret?.GetComponentInChildren<ParticleSystem>();
+            // Initialize tank-specific components
+            if (turret == null)
+            {
+                turret = transform.Find("Turret")?.gameObject;
+            }
             
-            if (!mainGunAudio) mainGunAudio = mainGun?.GetComponent<AudioSource>();
-            if (!secondaryGunAudio) secondaryGunAudio = turret?.GetComponent<AudioSource>();
-
-            environmentState ??= new UnitEnvironmentState();
+            if (mainGun == null)
+            {
+                mainGun = transform.Find("MainGun")?.gameObject;
+            }
+            
+            // Set up effects
+            if (mainGunEffect == null)
+            {
+                mainGunEffect = mainGun.GetComponentInChildren<ParticleSystem>();
+            }
+            
+            if (secondaryGunEffect == null)
+            {
+                secondaryGunEffect = turret.GetComponentInChildren<ParticleSystem>();
+            }
+            
+            // Initialize tank stats
+            //currentArmor = maxArmor;
+            //currentAmmo = maxAmmo;
+            
+            // Set up audio
+            if (mainGunAudio == null)
+            {
+                mainGunAudio = mainGun.GetComponent<AudioSource>();
+                if (mainGunAudio == null)
+                {
+                    mainGunAudio = mainGun.AddComponent<AudioSource>();
+                    mainGunAudio.spatialBlend = 1f;
+                    mainGunAudio.maxDistance = 30f;
+                }
+            }
+            
+            if (secondaryGunAudio == null)
+            {
+                secondaryGunAudio = turret.GetComponent<AudioSource>();
+                if (secondaryGunAudio == null)
+                {
+                    secondaryGunAudio = turret.AddComponent<AudioSource>();
+                    secondaryGunAudio.spatialBlend = 1f;
+                    secondaryGunAudio.maxDistance = 30f;
+                }
+            }
         }
 
         protected override void Update()
@@ -164,24 +214,29 @@ namespace RTS.Units
             audio.Play();
         }
 
-        protected override bool ShouldApplyCrushDamage(Unit otherUnit)
+        protected override bool ShouldApplyCrushDamage(Unit target)
         {
-            // Heavy tanks can crush infantry and light vehicles
-            return otherUnit.type == UnitType.Insurgent || 
-                   otherUnit.type == UnitType.Drone ||
-                   otherUnit.type == UnitType.TechnicalVehicle;
+            if (target == null) return false;
+            
+            float distance = Vector3.Distance(transform.position, target.transform.position);
+            return distance <= crushRadius && target.GetType() != typeof(HeavyTank);
         }
 
         protected override void PlayAttackEffect()
         {
-            // Additional tank-specific effects
-            // e.g., track marks, dust clouds, etc.
+            if (attackEffect != null)
+            {
+                attackEffect.Play();
+            }
         }
 
         protected override void PlayCrushEffect(Vector3 position)
         {
-            // Tank-specific crush effects
-            // e.g., metal crushing sounds, debris particles
+            if (crushEffect != null)
+            {
+                crushEffect.transform.position = position;
+                crushEffect.Play();
+            }
         }
 
         public override void TakeDamage(float damage)
@@ -195,19 +250,43 @@ namespace RTS.Units
             base.TakeDamage(damage);
         }
 
-        protected override void OnDrawGizmosSelected()
+        protected override void OnDrawGizmos()
         {
-            base.OnDrawGizmosSelected();
+            base.OnDrawGizmos();
 
-            // Draw main gun range
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, attackRange);
+            if (!Application.isPlaying) return;
 
-            // Draw turret rotation
-            if (turret != null)
+            if (isSelected)
             {
-                Gizmos.color = Color.blue;
-                Gizmos.DrawLine(turret.position, turret.position + turret.forward * 5f);
+                // Draw crush damage radius
+                Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
+                Gizmos.DrawWireSphere(transform.position, crushRadius);
+
+                // Draw turret rotation range
+                if (turret != null)
+                {
+                    Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
+                    Vector3 forward = turret.transform.forward * attackRange;
+                    Vector3 left = Quaternion.Euler(0, -maxTurretRotation, 0) * forward;
+                    Vector3 right = Quaternion.Euler(0, maxTurretRotation, 0) * forward;
+                    
+                    Gizmos.DrawLine(turret.transform.position, turret.transform.position + left);
+                    Gizmos.DrawLine(turret.transform.position, turret.transform.position + right);
+                    Gizmos.DrawWireSphere(turret.transform.position, attackRange);
+                }
+
+                // Draw track marks preview
+                //if (isMoving && trackMarks != null)
+                //{
+                //    Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.3f);
+                //    Vector3 direction = (targetPosition - transform.position).normalized;
+                //    Vector3 right = Vector3.Cross(Vector3.up, direction).normalized;
+                //    Vector3 leftTrack = transform.position - right * 1f;
+                //    Vector3 rightTrack = transform.position + right * 1f;
+                    
+                //    Gizmos.DrawLine(leftTrack, leftTrack + direction * 3f);
+                //    Gizmos.DrawLine(rightTrack, rightTrack + direction * 3f);
+                //}
             }
         }
     }

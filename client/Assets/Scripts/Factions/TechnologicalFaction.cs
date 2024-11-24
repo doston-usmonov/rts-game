@@ -1,11 +1,21 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RTS.Units;
+using RTS.Units.Combat;
 using RTS.Core;
 
 namespace RTS.Factions
 {
-    public class TechnologicalFaction : Faction
+    public class TechnologicalFaction : MonoBehaviour
     {
+        [Header("Faction Identity")]
+        public string factionName;
+        public FactionType type;
+
+        [Header("Resources")]
+        public float power = 100f;
+        public float gold = 1000f;
+
         [Header("Tech Faction Specifics")]
         public float energyEfficiency = 1.5f;  // Bonus to power generation
         public float automationBonus = 0.25f;  // Reduction in unit production time
@@ -22,9 +32,8 @@ namespace RTS.Factions
         private float currentShieldStrength;
         private float maxShieldStrength = 200f;
 
-        public override void Initialize()
+        public void Initialize()
         {
-            base.Initialize();
             factionName = "Technological Alliance";
             type = FactionType.TechnologicalFaction;
             currentShieldStrength = maxShieldStrength;
@@ -33,10 +42,8 @@ namespace RTS.Factions
             power *= energyEfficiency;
         }
 
-        public override void UpdateEconomy()
+        public void UpdateEconomy()
         {
-            base.UpdateEconomy();
-            
             // Automated resource collection through drones
             foreach (DroneController drone in activeDrones)
             {
@@ -54,10 +61,8 @@ namespace RTS.Factions
             }
         }
 
-        public override bool CanBuildUnit(UnitType unitType)
+        public bool CanBuildUnit(UnitType unitType)
         {
-            if (!base.CanBuildUnit(unitType)) return false;
-
             // Check tech-specific requirements
             switch (unitType)
             {
@@ -72,10 +77,8 @@ namespace RTS.Factions
             }
         }
 
-        public override bool CanConstructBuilding(BuildingType buildingType)
+        public bool CanConstructBuilding(BuildingType buildingType)
         {
-            if (!base.CanConstructBuilding(buildingType)) return false;
-
             // Check tech-specific requirements
             switch (buildingType)
             {
@@ -135,7 +138,7 @@ namespace RTS.Factions
         }
 
         // Shield system
-        public override void TakeDamage(float damage)
+        public void TakeDamage(float damage)
         {
             // Absorb damage with shields first
             if (currentShieldStrength > 0)
@@ -148,7 +151,7 @@ namespace RTS.Factions
             // Apply remaining damage to base health
             if (damage > 0)
             {
-                base.TakeDamage(damage);
+                baseHealth -= damage;
             }
         }
 

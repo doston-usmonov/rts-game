@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using RTS.Units;
+using RTS.Core.Pooling;
 using System.Threading.Tasks;
 
 namespace RTS.UI
@@ -29,7 +31,7 @@ namespace RTS.UI
 
         private Dictionary<Vector2Int, TerrainCell> terrainGrid = new Dictionary<Vector2Int, TerrainCell>();
         private HashSet<Vector2Int> activeAnalysisCells = new HashSet<Vector2Int>();
-        private ObjectPool<GameObject> debugMarkerPool;
+        private ObjectPool<DebugMarker> debugMarkerPool;
 
         public class TerrainCell
         {
@@ -42,7 +44,7 @@ namespace RTS.UI
             public List<Vector3> coverPoints = new List<Vector3>();
             public TerrainType terrainType;
             public float lastUpdateTime;
-            public GameObject debugMarker;
+            public DebugMarker debugMarker;
         }
 
         public enum TerrainType
@@ -66,15 +68,18 @@ namespace RTS.UI
 
             GameObject poolContainer = new GameObject("DebugMarkerPool");
             poolContainer.transform.SetParent(transform);
-            debugMarkerPool = poolContainer.AddComponent<ObjectPool<GameObject>>();
+
+            // Create a prototype for the debug marker
+            GameObject markerPrototype = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            markerPrototype.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            var marker = markerPrototype.AddComponent<DebugMarker>();
+            marker.Initialize(debugMarkerPool);
             
-            debugMarkerPool.Initialize(() =>
-            {
-                GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                marker.transform.SetParent(poolContainer.transform);
-                marker.GetComponent<Collider>().enabled = false;
-                return marker;
-            }, 100);
+            // Initialize the pool
+            debugMarkerPool = new ObjectPool<DebugMarker>(marker, poolContainer.transform);
+            
+            // Cleanup the prototype
+            Destroy(markerPrototype);
         }
 
         public async Task<TerrainCell> AnalyzeTerrainAtPosition(Vector3 position)
@@ -103,7 +108,7 @@ namespace RTS.UI
                 
                 if (showDebugVisualization)
                 {
-                    UpdateDebugVisualization(gridPos, cell);
+                    UpdateDebugVisualization(cell, position);
                 }
             }
 
@@ -248,35 +253,28 @@ namespace RTS.UI
             }
         }
 
-        private void UpdateDebugVisualization(Vector2Int gridPos, TerrainCell cell)
+        private void UpdateDebugVisualization(TerrainCell cell, Vector3 position)
         {
-            if (!showDebugVisualization) return;
+            if (!showDebugVisualization || debugMarkerPool == null) return;
 
-            if (cell.debugMarker == null)
+            if (cell.debugMarker != null)
             {
-                cell.debugMarker = debugMarkerPool.Get();
+                cell.debugMarker.ReturnToPool();
+                cell.debugMarker = null;
             }
 
-            Vector3 worldPos = GridToWorld(gridPos);
-            cell.debugMarker.transform.position = new Vector3(worldPos.x, cell.height, worldPos.z);
-            cell.debugMarker.transform.localScale = Vector3.one * analysisGridSize * 0.9f;
-
-            Material material = cell.debugMarker.GetComponent<Renderer>().material;
-            material.color = GetDebugColor(cell);
-        }
-
-        private Color GetDebugColor(TerrainCell cell)
-        {
-            if (cell.isImpassable)
-                return impassableColor;
-            if (cell.isHighGround)
-                return highGroundColor;
-            if (cell.providesCover)
-                return coverColor;
-            if (cell.terrainType == TerrainType.Water || cell.terrainType == TerrainType.Mud)
-                return dangerZoneColor;
+            cell.debugMarker = debugMarkerPool.Get(position);
             
-            return Color.clear;
+            Color markerColor = Color.white;
+            if (cell.isHighGround)
+                markerColor = highGroundColor;
+            else if (cell.providesCover)
+                markerColor = coverColor;
+            else if (cell.isImpassable)
+                markerColor = impassableColor;
+
+            cell.debugMarker.SetColor(markerColor);
+            cell.debugMarker.transform.localScale = new Vector3(analysisGridSize * 0.9f, cell.height, analysisGridSize * 0.9f);
         }
 
         public float GetMovementModifier(Vector3 position)
@@ -344,7 +342,7 @@ namespace RTS.UI
                 {
                     if (cell.debugMarker != null)
                     {
-                        debugMarkerPool.ReturnToPool(cell.debugMarker);
+                        cell.debugMarker.ReturnToPool();
                     }
                 }
                 Destroy(debugMarkerPool.gameObject);

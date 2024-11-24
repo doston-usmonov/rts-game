@@ -12,18 +12,23 @@ namespace RTS.Units
         [SerializeField] protected float crushDamage = 25f;
         [SerializeField] protected float splashRadius = 2f;
         [SerializeField] protected float splashDamageMultiplier = 0.5f;
+        [SerializeField] protected float baseDamage = 50f;
+        [SerializeField] protected float baseArmor = 20f;
 
         [Header("Combat Systems")]
         [SerializeField] protected TerrainAdaptation terrainAdaptation;
         [SerializeField] protected TacticalRetreat tacticalRetreat;
         [SerializeField] protected FormationBonus formationBonus;
 
-        protected float baseDamage;
-        protected float baseArmor;
+        protected float baseMoveSpeed;
+        protected float attackDamage;
+        protected float armor;
         protected bool isEnraged = false;
         protected ParticleSystem rageEffect;
         protected TerrainType currentTerrain = TerrainType.Normal;
         protected Vector3 fallbackPosition;
+        protected DamageHandler damageHandler;
+        protected float rageBonus = 1f;
 
         protected override void Awake()
         {
@@ -35,6 +40,11 @@ namespace RTS.Units
         {
             baseDamage = attackDamage;
             baseArmor = armor;
+            damageHandler = GetComponent<DamageHandler>();
+            if (damageHandler == null)
+            {
+                damageHandler = gameObject.AddComponent<DamageHandler>();
+            }
             
             // Initialize combat systems
             tacticalRetreat.Initialize(this);
@@ -46,7 +56,7 @@ namespace RTS.Units
             fallbackPosition = transform.position - transform.forward * 20f;
         }
 
-        public override void Initialize(FactionType faction)
+        public override void Initialize(RTS.Factions.FactionType faction)
         {
             base.Initialize(faction);
             
@@ -64,6 +74,7 @@ namespace RTS.Units
             UpdateTerrainEffects();
             CheckRetreatConditions();
             UpdateFormationEffects();
+            CheckForCrushDamage();
         }
 
         protected virtual void UpdateTerrainEffects()
@@ -178,6 +189,35 @@ namespace RTS.Units
             // Implement attack effects
         }
 
+        private void CheckForCrushDamage()
+        {
+            Collider[] colliders = Physics.OverlapSphere(transform.position, 1.5f);
+            foreach (Collider col in colliders)
+            {
+                Unit unit = col.GetComponent<Unit>();
+                if (unit != null && unit != this && ShouldApplyCrushDamage(unit))
+                {
+                    unit.TakeDamage(crushDamage);
+                    PlayCrushEffect(unit.transform.position);
+                }
+            }
+        }
+
+        protected virtual bool ShouldApplyCrushDamage(Unit target)
+        {
+            return target != null && target.GetFaction() != GetFaction();
+        }
+
+        protected virtual void PlayAttackEffect()
+        {
+            // Base implementation - override in derived classes
+        }
+
+        protected virtual void PlayCrushEffect(Vector3 position)
+        {
+            // Base implementation - override in derived classes
+        }
+
         public void SetFormationType(FormationType formation)
         {
             formationBonus.UpdateFormation(formation);
@@ -188,9 +228,26 @@ namespace RTS.Units
             fallbackPosition = position;
         }
 
-        protected override void OnDrawGizmosSelected()
+        public virtual void ApplyRageBonus(float multiplier)
         {
-            base.OnDrawGizmosSelected();
+            isEnraged = true;
+            rageBonus = multiplier;
+            attackDamage = baseDamage * rageBonus;
+            
+            if (rageEffect != null)
+            {
+                rageEffect.Play();
+            }
+        }
+
+        public override float GetHealthPercentage()
+        {
+            return (float)currentHealth / maxHealth * 100f;
+        }
+
+        protected override void OnDrawGizmos()
+        {
+            base.OnDrawGizmos();
             
             // Draw attack range
             Gizmos.color = Color.red;
@@ -202,6 +259,10 @@ namespace RTS.Units
                 Gizmos.color = Color.yellow;
                 Gizmos.DrawWireSphere(transform.position, splashRadius);
             }
+            
+            // Draw crush radius
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, 1.5f);
             
             // Draw retreat path if retreating
             if (tacticalRetreat.IsRetreating())
