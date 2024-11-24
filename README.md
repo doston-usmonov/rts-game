@@ -23,44 +23,173 @@ This game features three unique factions, real-time combat mechanics, and strate
 ## Project Structure
 ```
 rts-game/
-├── Assets/                 # Game assets and resources
-│   ├── Models/            # 3D models
-│   ├── Textures/         # Texture files
-│   ├── Audio/            # Sound effects and music
-│   └── Prefabs/          # Unity prefab objects
-├── Scripts/               # Game logic and systems
-│   ├── Core/             # Core game systems
-│   │   └── Pooling/      # Object pooling system
-│   ├── Factions/         # Faction-specific logic
-│   ├── Units/            # Unit behavior and combat
-│   ├── Buildings/        # Building systems
-│   ├── UI/               # User interface and HUD
-│   └── Networking/       # Multiplayer functionality
-├── Documentation/         # Project documentation
-└── Tests/                # Unit tests and integration tests
+├── client/                # Unity client project
+│   ├── Assets/           # Unity assets
+│   │   ├── Audio/       # Sound effects and music files
+│   │   │   ├── generated_sounds/  # Procedurally generated audio
+│   │   │   └── Readme.txt        # Audio generation documentation
+│   │   ├── Prefabs/     # Reusable game objects
+│   │   │   └── Environment/      # Environment-related prefabs
+│   │   ├── Resources/   # Runtime-loaded resources
+│   │   │   ├── Shaders/         # Custom shader files
+│   │   │   └── Textures/        # Texture assets
+│   │   ├── Scenes/      # Unity scene files
+│   │   ├── Scripts/     # C# script files
+│   │   │   ├── AI/             # AI behavior scripts
+│   │   │   ├── Buildings/      # Building system scripts
+│   │   │   ├── Combat/         # Combat mechanics
+│   │   │   ├── Commands/       # Unit command system
+│   │   │   ├── Core/          # Core game systems
+│   │   │   │   └── Pooling/   # Object pooling system
+│   │   │   ├── Effects/       # Visual effects
+│   │   │   ├── Environment/   # Environment systems
+│   │   │   ├── Factions/      # Faction-specific logic
+│   │   │   ├── Gameplay/      # Core gameplay mechanics
+│   │   │   ├── Resources/     # Resource management
+│   │   │   ├── UI/           # User interface scripts
+│   │   │   ├── Units/        # Unit behavior and combat
+│   │   │   └── Vision/       # Fog of war and vision
+│   │   ├── Shaders/     # Shader files
+│   │   └── UI/          # UI assets and prefabs
+│   ├── Packages/        # Unity package dependencies
+│   ├── ProjectSettings/ # Unity project settings
+│   └── UserSettings/    # User-specific settings
+├── server/              # Backend server
+│   ├── src/            # Server source code
+│   └── config/         # Server configuration
+└── Documentation/       # Project documentation
+    ├── API/            # API documentation
+    ├── Design/         # Game design documents
+    └── Technical/      # Technical documentation
 ```
 
-## Recent Updates
-### Object Pooling System
-- Implemented generic ObjectPool<T> for efficient object reuse
-- Added IPoolable interface for managed object lifecycle
-- Integrated with debug visualization system
+## Documentation
 
-### Faction System
-- Added three distinct faction types:
-  - Technological Faction: Advanced tech and drones
-  - Heavy Assault Faction: Powerful units and strong defenses
-  - Guerrilla Faction: Mobile and tactical warfare
+### Technical Documentation
 
-### Unit System
-- Enhanced unit base class with health and faction properties
-- Implemented specialized unit types (Infantry, Heavy, Light Vehicle)
-- Added resource gathering mechanics for drones
+#### Core Systems
 
-### Terrain Analysis
-- Dynamic terrain analysis system for tactical gameplay
-- Debug visualization tools for development
-- Efficient object pooling for debug markers
+1. **Object Pooling System**
+   - Location: `client/Assets/Scripts/Core/Pooling/`
+   - Purpose: Efficient object reuse system for frequently spawned objects
+   - Key Components:
+     - `ObjectPool<T>`: Generic pool implementation
+     - `IPoolable`: Interface for poolable objects
+   - Usage:
+     ```csharp
+     // Create a new pool
+     var pool = new ObjectPool<DebugMarker>(prefab, transform);
+     
+     // Get an object from pool
+     var obj = pool.Get();
+     
+     // Return object to pool
+     obj.ReturnToPool();
+     ```
+
+2. **Faction System**
+   - Location: `client/Assets/Scripts/Factions/`
+   - Components:
+     - Faction Types: Technological, Heavy Assault, Guerrilla
+     - Resource Management
+     - Tech Trees
+   - Key Features:
+     - Unique unit types per faction
+     - Specialized abilities
+     - Resource gathering mechanics
+
+3. **Unit System**
+   - Location: `client/Assets/Scripts/Units/`
+   - Unit Types:
+     - Infantry
+     - Heavy Units
+     - Light Vehicles
+     - Drones
+   - Features:
+     - Health and damage system
+     - Movement and pathfinding
+     - Combat mechanics
+     - Resource gathering (Drones)
+
+4. **Terrain System**
+   - Location: `client/Assets/Scripts/Environment/`
+   - Features:
+     - Dynamic terrain analysis
+     - Weather effects
+     - Environmental hazards
+   - Components:
+     - TerrainManager
+     - WeatherSystem
+     - TerrainAnalyzer
+
+### Design Documentation
+
+#### Game Design
+
+1. **Factions**
+   
+   **Technological Faction**
+   - Focus: Advanced technology and automation
+   - Strengths:
+     - Superior drone units
+     - Advanced research capabilities
+     - Efficient resource gathering
+   - Weaknesses:
+     - Higher resource costs
+     - Less durable units
+
+   **Heavy Assault Faction**
+   - Focus: Brute force and durability
+   - Strengths:
+     - Powerful heavy units
+     - Strong defensive structures
+     - High unit durability
+   - Weaknesses:
+     - Slower movement
+     - Higher resource consumption
+
+   **Guerrilla Faction**
+   - Focus: Mobility and tactics
+   - Strengths:
+     - Fast units
+     - Stealth capabilities
+     - Effective hit-and-run tactics
+   - Weaknesses:
+     - Lower unit health
+     - Limited heavy units
+
+2. **Resource System**
+   - Primary Resources:
+     - Gold: Basic resource for buildings and units
+     - Power: Advanced technology and special abilities
+   - Gathering Methods:
+     - Drone collection
+     - Resource nodes
+     - Territory control
+
+3. **Combat Mechanics**
+   - Unit Formations
+   - Terrain Effects
+   - Weather Impact
+   - Special Abilities
+   - Group Tactics
+
+### API Documentation
+
+#### Networking API
+
+1. **Server Endpoints**
+   ```
+   POST /api/game/create    - Create new game session
+   POST /api/game/join     - Join existing game
+   GET  /api/game/state    - Get current game state
+   POST /api/game/command  - Send unit command
+   ```
+
+2. **Multiplayer Sync**
+   - Real-time state synchronization
+   - Command validation
+   - Anti-cheat measures
 
 ## Setup Instructions
 1. Install Unity 2022.3 LTS or later
